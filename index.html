@@ -1,0 +1,612 @@
+```html
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smarta Budgeten - Skottsäker Kalkylator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Dölj pilar i nummer-inputs */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-24 selection:bg-emerald-500/30">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-40 px-4 py-4">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+                        Smarta Budgeten 
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full border border-emerald-500/20 font-medium">Pro</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Skottsäker kalkyl & live-analys</p>
+                </div>
+            </div>
+            <button onclick="confirmReset()" class="text-xs text-slate-400 hover:text-rose-400 flex items-center space-x-1.5 py-1.5 px-3 rounded-lg hover:bg-slate-900 transition-all">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Återställ standard</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Vänster kolumn: Inmatning & Listor -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- 1. LÖNEINMATNING -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="coins" class="w-5 h-5 text-emerald-400"></i>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Din lön efter skatt</h2>
+                        </div>
+                    </div>
+                    <div class="relative group">
+                        <input type="number" id="salaryInput" value="30000" oninput="calculateBudget()" placeholder="0"
+                            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-4 pl-4 pr-12 text-3xl font-extrabold text-emerald-400 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-500 group-focus-within:text-emerald-400 transition-colors">kr</span>
+                    </div>
+                    
+                    <!-- Snabblänkar för lön -->
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="setSalary(25000)" class="flex-1 text-xs bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 py-2 rounded-xl transition-all">25 000 kr</button>
+                        <button onclick="setSalary(30000)" class="flex-1 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 py-2 rounded-xl font-semibold transition-all">30 000 kr</button>
+                        <button onclick="setSalary(35000)" class="flex-1 text-xs bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 py-2 rounded-xl transition-all">35 000 kr</button>
+                    </div>
+                </div>
+
+                <!-- 2. FASTA UTGIFTER -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="receipt" class="w-5 h-5 text-rose-400"></i>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Fasta utgifter (Räkningar)</h2>
+                        </div>
+                        <button onclick="addNewItem('fixed')" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl transition-all flex items-center space-x-1 text-xs font-semibold">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Lägg till</span>
+                        </button>
+                    </div>
+
+                    <!-- List container -->
+                    <div id="fixedList" class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                        <!-- Genereras av JS -->
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800/80 flex justify-between items-center">
+                        <span class="text-sm text-slate-400">Totalt fasta utgifter:</span>
+                        <span id="fixedTotalText" class="font-bold text-rose-400 text-base">0,00 kr</span>
+                    </div>
+                </div>
+
+                <!-- 3. RÖRLIGA BUDGETAR & ÖVERFÖRINGAR -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="shuffle" class="w-5 h-5 text-amber-400"></i>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Månadsöverföringar</h2>
+                        </div>
+                        <button onclick="addNewItem('variable')" class="p-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 rounded-xl transition-all flex items-center space-x-1 text-xs font-semibold">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Lägg till</span>
+                        </button>
+                    </div>
+
+                    <!-- List container -->
+                    <div id="variableList" class="space-y-2.5 pr-1">
+                        <!-- Genereras av JS -->
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800/80 flex justify-between items-center">
+                        <span class="text-sm text-slate-400">Summa överföringar:</span>
+                        <span id="variableTotalText" class="font-bold text-amber-400 text-base">0,00 kr</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Höger kolumn: Resultat & Feedback -->
+            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+                
+                <!-- RESULTATKORT -->
+                <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-20 -top-20 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <h3 class="text-xs font-bold text-slate-400 tracking-widest uppercase mb-1">Månatligt Sparutrymme</h3>
+                    <div id="savingsResult" class="text-4xl lg:text-5xl font-extrabold text-emerald-400 tracking-tight transition-all duration-300">
+                        0,00 kr
+                    </div>
+                    <p class="text-xs text-slate-400 mb-6">över efter fasta räkningar och avsatta rörliga konton.</p>
+
+                    <!-- Visuell Framstegsmätare -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-slate-400 uppercase tracking-wider">Sparprocent</span>
+                            <span id="savingsPercentage" class="text-emerald-400">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-800 overflow-hidden p-0.5">
+                            <div id="savingsProgressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Snabbsummering -->
+                    <div class="grid grid-cols-2 gap-4 mt-6 pt-5 border-t border-slate-900">
+                        <div>
+                            <span class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Fasta kostnader</span>
+                            <span id="fixedSumText" class="text-sm font-bold text-rose-300/90">0 kr</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Planerat Nöje/Mål</span>
+                            <span id="variableSumText" class="text-sm font-bold text-amber-300/90">0 kr</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COACHING & FEEDBACK (Rå & schysst enligt Simon-inställningarna) -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <i data-lucide="brain-circuit" class="w-5 h-5 text-indigo-400"></i>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Ärlig analys & Coach</h2>
+                    </div>
+                    
+                    <div id="coachMessageBox" class="bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 text-sm leading-relaxed text-slate-300 transition-all duration-300">
+                        <!-- Genereras dynamiskt -->
+                    </div>
+                </div>
+
+                <!-- ENKEL SPARSIMULERING -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4">Sparsaldon över tid</h2>
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
+                            <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-500"></i> 6 månader:</span>
+                            <span id="savings6m" class="font-bold text-emerald-400">0 kr</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
+                            <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5 text-slate-500"></i> 1 år:</span>
+                            <span id="savings12m" class="font-bold text-emerald-400">0 kr</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="award" class="w-3.5 h-3.5 text-slate-500"></i> 3 år:</span>
+                            <span id="savings36m" class="font-bold text-emerald-400">0 kr</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TOAST NOTIFICATIONS (Ersätter skräpiga alerts) -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- BEKRÄFTELSEMODAL (Säker återställning) -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white">Återställa kalkylen?</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Detta kommer att skriva över dina anpassade rader och återställa de fasta kostnaderna och överföringarna från bilden. Är du helt säker?</p>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-2.5 rounded-xl font-medium transition-all">Avbryt</button>
+                <button onclick="executeReset()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-xs text-white py-2.5 rounded-xl font-semibold transition-all">Ja, återställ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Standardlistor baserade på användarens bilder (Helt frysta originaler)
+        const defaultFixedExpenses = [
+            { id: "f1", name: "Till gemensamma kontot", amount: 7500 },
+            { id: "f2", name: "CSN", amount: 803 },
+            { id: "f3", name: "Nordea LIV 1896 86 11114", amount: 600 },
+            { id: "f4", name: "Tele2", amount: 548 },
+            { id: "f5", name: "Utgiftsskydd", amount: 314.50 },
+            { id: "f6", name: "Autogiro Folksam", amount: 234 },
+            { id: "f7", name: "Autogiro SEKO", amount: 218 },
+            { id: "f8", name: "Viaplay", amount: 99 },
+            { id: "f9", name: "Apple.com/Bill", amount: 39 },
+            { id: "f10", name: "Nordea Vardagspaket", amount: 35 },
+            { id: "f11", name: "Nordea LIV 1595 83 57964", amount: 82 }
+        ];
+
+        const defaultVariableBudgets = [
+            { id: "v1", name: "Till matkontot", amount: 3500 },
+            { id: "v2", name: "Till bilkontot", amount: 1500 },
+            { id: "v3", name: "Nöjen/Fickpengar (Lönekontot)", amount: 4500 }
+        ];
+
+        // Säkert datahämtning från LocalStorage med inbygda fallbacks
+        let fixedExpenses = [];
+        let variableBudgets = [];
+
+        try {
+            fixedExpenses = JSON.parse(localStorage.getItem('fixedExpenses_v2')) || [];
+            variableBudgets = JSON.parse(localStorage.getItem('variableBudgets_v2')) || [];
+        } catch (e) {
+            console.warn("Kunde inte läsa från localStorage, använder tomt minne.", e);
+        }
+
+        if (fixedExpenses.length === 0) fixedExpenses = JSON.parse(JSON.stringify(defaultFixedExpenses));
+        if (variableBudgets.length === 0) variableBudgets = JSON.parse(JSON.stringify(defaultVariableBudgets));
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderLists();
+            calculateBudget();
+        };
+
+        // Skottsäker ID-skapare baserad på tid och slump för att undvika dubbletter
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        // Rendera listorna i DOM:en
+        function renderLists() {
+            const fixedList = document.getElementById('fixedList');
+            fixedList.innerHTML = '';
+            
+            if (fixedExpenses.length === 0) {
+                fixedList.appendChild(createEmptyStateHTML("fixed"));
+            } else {
+                fixedExpenses.forEach(item => {
+                    fixedList.appendChild(createRowHTML(item, 'fixed'));
+                });
+            }
+
+            const variableList = document.getElementById('variableList');
+            variableList.innerHTML = '';
+            
+            if (variableBudgets.length === 0) {
+                variableList.appendChild(createEmptyStateHTML("variable"));
+            } else {
+                variableBudgets.forEach(item => {
+                    variableList.appendChild(createRowHTML(item, 'variable'));
+                });
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Skapa rad-element (HTML) för enskilda poster
+        function createRowHTML(item, type) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between gap-3 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60 focus-within:border-slate-700/80 transition-all duration-200';
+            
+            // Färgmarkör vid fokus
+            const borderFocusClass = type === 'fixed' ? 'focus:ring-rose-500/10' : 'focus:ring-amber-500/10';
+
+            div.innerHTML = `
+                <input type="text" value="${escapeHtml(item.name)}" onchange="updateItemName('${item.id}', '${type}', this.value)"
+                    class="bg-transparent text-sm text-slate-200 font-medium px-2 py-2 w-1/2 focus:outline-none focus:text-white transition-colors" placeholder="Beskrivning">
+                <div class="flex items-center space-x-1 justify-end w-1/2">
+                    <input type="number" step="any" value="${item.amount === 0 ? '' : item.amount}" oninput="updateItemAmount('${item.id}', '${type}', this.value)"
+                        class="bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-lg text-sm text-right font-bold text-slate-100 py-1.5 px-2.5 w-24 focus:outline-none" placeholder="0">
+                    <span class="text-xs text-slate-500 font-bold px-1">kr</span>
+                    <button onclick="deleteItem('${item.id}', '${type}')" class="text-slate-500 hover:text-rose-400 p-2 transition-colors rounded-lg hover:bg-slate-950" title="Radera">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        // Om en lista töms visas detta för bättre UX
+        function createEmptyStateHTML(type) {
+            const div = document.createElement('div');
+            div.className = 'text-center py-6 px-4 border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs';
+            div.innerHTML = `
+                <p class="mb-2">Inga poster här</p>
+                <button onclick="addNewItem('${type}')" class="text-xs text-emerald-400 hover:underline">Klicka här för att lägga till en ny</button>
+            `;
+            return div;
+        }
+
+        // Säkra inputs från skadlig kod
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Live-uppdatering av belopp med inbygd NaN-guard
+        function updateItemAmount(id, type, value) {
+            const list = type === 'fixed' ? fixedExpenses : variableBudgets;
+            const item = list.find(i => i.id === id);
+            if (item) {
+                // Tvinga till positiv flyttal, hantera tomma fält som 0
+                let parsed = parseFloat(value);
+                if (isNaN(parsed) || parsed < 0) parsed = 0;
+                
+                // Avrunda till max 2 decimaler
+                item.amount = Math.round(parsed * 100) / 100;
+                saveData();
+                calculateBudget();
+            }
+        }
+
+        function updateItemName(id, type, value) {
+            const list = type === 'fixed' ? fixedExpenses : variableBudgets;
+            const item = list.find(i => i.id === id);
+            if (item) {
+                // Sätt standardnamn om användaren lämnar det tomt
+                item.name = value.trim() || (type === 'fixed' ? "Namnlös utgift" : "Namnlös överföring");
+                saveData();
+            }
+        }
+
+        // Lägg till rad säkert
+        function addNewItem(type) {
+            const list = type === 'fixed' ? fixedExpenses : variableBudgets;
+            const newItem = {
+                id: generateUniqueId(),
+                name: type === 'fixed' ? "Ny utgift" : "Ny överföring",
+                amount: 0
+            };
+            list.push(newItem);
+            saveData();
+            renderLists();
+            calculateBudget();
+            showToast("Ny rad tillagd!", "success");
+        }
+
+        // Radera rad säkert
+        function deleteItem(id, type) {
+            if (type === 'fixed') {
+                fixedExpenses = fixedExpenses.filter(i => i.id !== id);
+            } else {
+                variableBudgets = variableBudgets.filter(i => i.id !== id);
+            }
+            saveData();
+            renderLists();
+            calculateBudget();
+            showToast("Rad raderad.", "info");
+        }
+
+        // Spara till LocalStorage med try-catch
+        function saveData() {
+            try {
+                localStorage.setItem('fixedExpenses_v2', JSON.stringify(fixedExpenses));
+                localStorage.setItem('variableBudgets_v2', JSON.stringify(variableBudgets));
+            } catch (e) {
+                console.error("Det gick inte att spara data till webbläsaren:", e);
+            }
+        }
+
+        // Återställning dialoger
+        function confirmReset() {
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function executeReset() {
+            fixedExpenses = JSON.parse(JSON.stringify(defaultFixedExpenses));
+            variableBudgets = JSON.parse(JSON.stringify(defaultVariableBudgets));
+            document.getElementById('salaryInput').value = 30000;
+            saveData();
+            renderLists();
+            calculateBudget();
+            closeConfirmModal();
+            showToast("Kalkylen återställd till standard!", "success");
+        }
+
+        function setSalary(amount) {
+            let parsed = parseFloat(amount);
+            if (isNaN(parsed) || parsed < 0) parsed = 0;
+            document.getElementById('salaryInput').value = parsed;
+            calculateBudget();
+            showToast(`Lön inställd på ${formatCurrency(parsed)}`, "info");
+        }
+
+        // Stabil och exakt budgetberäkning
+        function calculateBudget() {
+            const salaryInput = document.getElementById('salaryInput');
+            let salary = parseFloat(salaryInput.value);
+            
+            // Säkerställ giltig lön
+            if (isNaN(salary) || salary < 0) {
+                salary = 0;
+            }
+
+            // Summering
+            const fixedSum = fixedExpenses.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            const variableSum = variableBudgets.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            
+            const totalOutflow = fixedSum + variableSum;
+            const netSavings = salary - totalOutflow;
+            
+            // Sparprocent-skydd (undvik division med noll)
+            const savingsPercent = salary > 0 ? Math.round((netSavings / salary) * 100) : 0;
+
+            // UI Real-time uppdateringar
+            document.getElementById('fixedTotalText').innerText = formatCurrency(fixedSum);
+            document.getElementById('variableTotalText').innerText = formatCurrency(variableSum);
+            
+            document.getElementById('fixedSumText').innerText = formatCurrency(fixedSum);
+            document.getElementById('variableSumText').innerText = formatCurrency(variableSum);
+
+            // Sparande text & progressbar
+            const savingsResultDiv = document.getElementById('savingsResult');
+            const percentText = document.getElementById('savingsPercentage');
+            const progressBar = document.getElementById('savingsProgressBar');
+
+            if (netSavings >= 0) {
+                savingsResultDiv.innerText = formatCurrency(netSavings);
+                savingsResultDiv.className = "text-4xl lg:text-5xl font-extrabold text-emerald-400 mb-1 tracking-tight";
+                percentText.innerText = `${savingsPercent}%`;
+                percentText.className = "text-emerald-400";
+                
+                const barWidth = Math.min(Math.max(savingsPercent, 0), 100);
+                progressBar.style.width = `${barWidth}%`;
+                progressBar.className = "bg-gradient-to-r from-emerald-500 to-teal-400 h-1.5 rounded-full transition-all duration-500";
+            } else {
+                savingsResultDiv.innerText = formatCurrency(netSavings);
+                savingsResultDiv.className = "text-4xl lg:text-5xl font-extrabold text-rose-500 mb-1 tracking-tight";
+                percentText.innerText = `Underskott!`;
+                percentText.className = "text-rose-500 font-bold";
+                progressBar.style.width = `100%`;
+                progressBar.className = "bg-rose-500 h-1.5 rounded-full transition-all duration-500";
+            }
+
+            // Sparprognoser över tid
+            const multiplier = netSavings > 0 ? netSavings : 0;
+            document.getElementById('savings6m').innerText = formatCurrency(multiplier * 6);
+            document.getElementById('savings12m').innerText = formatCurrency(multiplier * 12);
+            document.getElementById('savings36m').innerText = formatCurrency(multiplier * 36);
+
+            // Live Coach analys (Rå och ärlig)
+            generateCoachingFeedback(salary, fixedSum, variableSum, netSavings, savingsPercent);
+        }
+
+        // Formatera till svensk valuta (SEK)
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 2 }).format(amount);
+        }
+
+        // Toast Notification System
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-300';
+            const icon = type === 'success' ? 'check-circle' : 'info';
+
+            toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-xl border text-xs shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-4 h-4"></i>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Animera in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Ta bort efter 2.5 sek
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Dynamisk coaching baserad på lön och sparprocent
+        function generateCoachingFeedback(salary, fixed, variable, savings, percent) {
+            const box = document.getElementById('coachMessageBox');
+            
+            if (salary <= 0) {
+                box.innerHTML = `
+                    <div class="flex items-center space-x-2 text-slate-500 py-2">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <p class="text-xs">Fyll i en månadslön för att påbörja budgetanalysen.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            if (savings < 0) {
+                box.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 text-rose-400 font-bold text-xs">
+                            <i data-lucide="skull" class="w-4 h-4"></i>
+                            <span>DINA UTGIFTER KROSSAR DIN LÖN!</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Du går minus med <strong class="text-rose-400">${formatCurrency(Math.abs(savings))}</strong> varje månad. Det här är en akut ekonomisk blödning. Det finns inget snällt sätt att säga det här på – du behöver antingen kapa nöjeskontot direkt, sänka de rörliga överföringarna eller hitta sätt att få ner de fasta räkningarna.
+                        </p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const fixedPercent = Math.round((fixed / salary) * 100);
+            const variablePercent = Math.round((variable / salary) * 100);
+
+            let feedbackHTML = "";
+
+            if (percent === 0) {
+                feedbackHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 text-amber-400 font-bold text-xs">
+                            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                            <span>PRECIS PLUS-MINUS-NOLL</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Varje intjänad krona är redan uppäten innan månaden ens har börjat. Du har <strong class="text-white">0% kvar i marginal</strong>. Det betyder att en enda oförutsedd utgift (en trasig bil eller tandläkarräkning) kommer att kasta in dig i skuld. Se över om du verkligen behöver 4 500 kr i rent nöjeskonto just nu innan du har byggt en ordentlig krockkudde.
+                        </p>
+                    </div>
+                `;
+            } else if (percent < 10) {
+                feedbackHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 text-amber-400 font-bold text-xs">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            <span>SVALT SPARANDE (${percent}%)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Du sparar <strong class="text-amber-400">${percent}%</strong> av din lön (${formatCurrency(savings)}). Det är okej, men det är i klenaste laget om du vill nå ekonomisk trygghet snabbt. Dina fasta utgifter drar iväg på <strong class="text-rose-400">${fixedPercent}%</strong>. Om du lyckas trimma bort bara en hundralapp här och där ökar din sparprocent snabbare än du tror.
+                        </p>
+                    </div>
+                `;
+            } else if (percent >= 10 && percent < 25) {
+                feedbackHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 text-emerald-400 font-bold text-xs">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span>STABILT ARBETE (${percent}%)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Att kunna lägga undan <strong class="text-emerald-400">${percent}%</strong> av lönen (${formatCurrency(savings)}) placerar dig i en mycket bra position. Du har en fungerande struktur. Din nästa utmaning: Kan du utmana dina rörliga budgetar? De slukar just nu <strong class="text-amber-400">${variablePercent}%</strong> av din inkomst. Om du kan optimera mat eller nöje har du chansen att kliva över den gyllene 25%-gränsen!
+                        </p>
+                    </div>
+                `;
+            } else {
+                feedbackHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2 text-teal-400 font-bold text-xs">
+                            <i data-lucide="rocket" class="w-4 h-4"></i>
+                            <span>MÄSTARKRASS SPARPROCENT (${percent}%)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            En sparprocent på <strong class="text-teal-400">${percent}%</strong> är extremt starkt. Du lägger undan hela <strong class="text-teal-400">${formatCurrency(savings)}</strong> varje månad. Fortsätter du så här bygger du snabbt upp en massiv ekonomisk trygghet. Håll i den här disciplinen – det är få förunnat att ha så här goda marginaler!
+                        </p>
+                    </div>
+                `;
+            }
+
+            box.innerHTML = feedbackHTML;
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
+
+```
